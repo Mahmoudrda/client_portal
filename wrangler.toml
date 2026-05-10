@@ -1,0 +1,6 @@
+name = "client-portal"
+main = "portal-worker.js"
+compatibility_date = "2025-05-01"
+
+[assets]
+directory = "./portal-dist"
