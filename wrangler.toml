@@ -7,4 +7,5 @@ directory = "./portal-dist"
 
 [vars]
 ADMIN_EMAILS = "innovation@thereelrecipe.com"
+SUPER_ADMIN_EMAILS = "innovation@thereelrecipe.com"
 DEV_EMAIL = "innovation@thereelrecipe.com"
