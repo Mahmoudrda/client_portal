@@ -116,8 +116,9 @@ var src_default = {
       return jsonError("Not found", 404);
     }
 
-    // Admins hitting the root get the admin console; everyone else gets the client portal.
-    if (url.pathname === "/") {
+    // Root and /index.html: route admins to admin.html, everyone else to client.html.
+    if (url.pathname === "/" || url.pathname === "/index.html") {
+      let isAdmin = false;
       try {
         const email = await getAuthEmail(request, env);
         const admins = (env.ADMIN_EMAILS ?? "")
@@ -125,14 +126,13 @@ var src_default = {
           .split(",")
           .map(s => s.trim())
           .filter(Boolean);
-        if (email && admins.includes(email.toLowerCase())) {
-          const adminUrl = new URL(request.url);
-          adminUrl.pathname = "/admin.html";
-          return env.ASSETS.fetch(new Request(adminUrl, request));
-        }
+        isAdmin = !!email && admins.includes(email.toLowerCase());
       } catch {
-        // JWT problems fall through to normal asset serving.
+        // JWT problems mean we treat the caller as a non-admin client.
       }
+      const target = new URL(request.url);
+      target.pathname = isAdmin ? "/admin.html" : "/client.html";
+      return env.ASSETS.fetch(new Request(target, request));
     }
 
     return env.ASSETS.fetch(request);

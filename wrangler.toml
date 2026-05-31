@@ -4,7 +4,6 @@ compatibility_date = "2025-05-01"
 
 [assets]
 directory = "./portal-dist"
-run_worker_first = ["/"]
 
 [vars]
 ADMIN_EMAILS = "innovation@thereelrecipe.com,mira.samirr1@gmail.com,aliaasayed373@gmail.com,kenzy8856@gmail.com,habibamohamed0611@gmail.com"
