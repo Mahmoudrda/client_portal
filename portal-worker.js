@@ -309,7 +309,7 @@ async function handleAdminClients(request, env) {
 
     if (!superAdmin) {
       // AM scope: collect distinct Client IDs from reels assigned to this AM.
-      const amFormula = `FIND(LOWER("${escAirtable(admin)}"),LOWER(ARRAYJOIN({Email (from AM Email)},",")))`;
+      const amFormula = `FIND(LOWER("${escAirtable(admin)}"),LOWER(ARRAYJOIN({Email (from AM Email) (from Client)},",")))`;
       const reels = await airtableGetAll(env, "Reels", `?filterByFormula=${enc(amFormula)}&fields[]=Client`);
 
       allowedClientIds = new Set();
@@ -365,7 +365,7 @@ async function handleAdminDeliverables(request, env) {
       `FIND(LOWER("${escAirtable(targetEmail)}"),LOWER(ARRAYJOIN({Client Email (from Client)},",")))`
     ];
     if (!isSuperAdmin(admin, env)) {
-      conditions.push(`FIND(LOWER("${escAirtable(admin)}"),LOWER(ARRAYJOIN({Email (from AM Email)},",")))`);
+      conditions.push(`FIND(LOWER("${escAirtable(admin)}"),LOWER(ARRAYJOIN({Email (from AM Email) (from Client)},",")))`);
     }
     if (year !== null) conditions.push(`YEAR({Posting Date})=${year}`);
     const formula = `AND(${conditions.join(",")})`;
