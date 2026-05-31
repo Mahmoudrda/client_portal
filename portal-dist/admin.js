@@ -15,6 +15,11 @@
   const yearSelect    = document.getElementById('adminYearSelect');
   const nameTargets   = document.querySelectorAll('[data-admin-current-name]');
 
+  const ccStrategyBtn   = document.querySelector('[data-cc="strategy"]');
+  const ccPlanBtn       = document.querySelector('[data-cc="plan"]');
+  const ccStrategyPanel = document.getElementById('cc-strategy-panel');
+  const ccPlanPanel     = document.getElementById('cc-plan-panel');
+
   if (!content || !tabsEl || !clientSelect || !yearSelect) return;
 
   const STORAGE_CLIENT = 'trr.admin.client';
@@ -50,6 +55,35 @@
     nameTargets.forEach(el => { el.textContent = name || '—'; });
   }
 
+  /* ── Strategy & Plan ── */
+  function setClientContext(strategy, plan) {
+    if (ccStrategyPanel) ccStrategyPanel.textContent = strategy || '';
+    if (ccPlanPanel)     ccPlanPanel.textContent     = plan || '';
+    if (ccStrategyBtn) {
+      ccStrategyBtn.disabled = !strategy;
+      ccStrategyBtn.setAttribute('aria-expanded', 'false');
+    }
+    if (ccPlanBtn) {
+      ccPlanBtn.disabled = !plan;
+      ccPlanBtn.setAttribute('aria-expanded', 'false');
+    }
+    if (ccStrategyPanel) ccStrategyPanel.hidden = true;
+    if (ccPlanPanel)     ccPlanPanel.hidden     = true;
+  }
+
+  function bindCCToggle(btn, panel) {
+    if (!btn || !panel) return;
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      const next = !open;
+      btn.setAttribute('aria-expanded', String(next));
+      panel.hidden = !next;
+    });
+  }
+  bindCCToggle(ccStrategyBtn, ccStrategyPanel);
+  bindCCToggle(ccPlanBtn,     ccPlanPanel);
+
   /* ── Reel list HTML (read-only — no feedback buttons) ── */
   function buildReelList(reels) {
     if (!reels.length) {
@@ -72,24 +106,26 @@
       const scriptBtn = hasScript
         ? `<button class="reel-script-btn" data-reel="${i}" aria-expanded="false" type="button" aria-label="View script">
              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+             <span class="reel-btn-label">Script</span>
            </button>`
         : `<span class="reel-no-script" aria-hidden="true"></span>`;
 
       const watchBtn = reel.driveLink
         ? `<a href="${esc(reel.driveLink)}" target="_blank" rel="noopener noreferrer" class="reel-watch-btn" aria-label="Watch video">
              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+             <span class="reel-btn-label">Watch</span>
            </a>`
         : `<span class="reel-no-script" aria-hidden="true"></span>`;
 
-      // Read-only feedback display: show badge if submitted, otherwise show "no feedback yet"
+      // Read-only feedback display: status badge if submitted, otherwise pending.
       let feedbackBadge = '';
       if (submitted) {
         const statusLabel = approved ? 'Approved' : 'Rejected';
         const statusCls   = approved ? 'rfb-approved' : 'rfb-rejected';
         const icon        = approved ? checkIcon : xIcon;
-        feedbackBadge = `<span class="reel-feedback-btn ${statusCls}" aria-label="${statusLabel}" title="${statusLabel}">${icon}</span>`;
+        feedbackBadge = `<span class="reel-feedback-btn ${statusCls}" aria-label="${statusLabel}" title="${statusLabel}">${icon}<span class="reel-btn-label">${statusLabel}</span></span>`;
       } else {
-        feedbackBadge = `<span class="reel-no-script" aria-hidden="true"></span>`;
+        feedbackBadge = `<span class="reel-feedback-btn reel-feedback-btn-pending" aria-label="Pending feedback" title="Awaiting feedback"><span class="reel-btn-label">Pending</span></span>`;
       }
 
       const commentPanel = (submitted && reel.clientComment) ? `
@@ -278,6 +314,7 @@
       months = [];
       tabsEl.innerHTML = '';
       updateClientName(null);
+      setClientContext(null, null);
       content.innerHTML = `<div class="portal-state"><p class="portal-state-msg">Select a client to view their content.</p></div>`;
       return;
     }
@@ -298,6 +335,7 @@
       }
       const data = await res.json();
       months = data.months || [];
+      setClientContext(data.strategy, data.plan);
 
       if (!months.length) {
         const who = client?.name || email;

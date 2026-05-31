@@ -11,6 +11,11 @@
   const statPub = document.getElementById('statPublished');
   const statPrg = document.getElementById('statProgress');
 
+  const ccStrategyBtn   = document.querySelector('[data-cc="strategy"]');
+  const ccPlanBtn       = document.querySelector('[data-cc="plan"]');
+  const ccStrategyPanel = document.getElementById('cc-strategy-panel');
+  const ccPlanPanel     = document.getElementById('cc-plan-panel');
+
   if (!content || !tabsEl) return;
 
   let months = [];
@@ -38,6 +43,35 @@
     return `<span class="reel-stage ${cls}">${esc(stage)}</span>`;
   }
 
+  /* ── Strategy & Plan ── */
+  function setClientContext(strategy, plan) {
+    if (ccStrategyPanel) ccStrategyPanel.textContent = strategy || '';
+    if (ccPlanPanel)     ccPlanPanel.textContent     = plan || '';
+    if (ccStrategyBtn) {
+      ccStrategyBtn.disabled = !strategy;
+      ccStrategyBtn.setAttribute('aria-expanded', 'false');
+    }
+    if (ccPlanBtn) {
+      ccPlanBtn.disabled = !plan;
+      ccPlanBtn.setAttribute('aria-expanded', 'false');
+    }
+    if (ccStrategyPanel) ccStrategyPanel.hidden = true;
+    if (ccPlanPanel)     ccPlanPanel.hidden     = true;
+  }
+
+  function bindCCToggle(btn, panel) {
+    if (!btn || !panel) return;
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      const next = !open;
+      btn.setAttribute('aria-expanded', String(next));
+      panel.hidden = !next;
+    });
+  }
+  bindCCToggle(ccStrategyBtn, ccStrategyPanel);
+  bindCCToggle(ccPlanBtn,     ccPlanPanel);
+
   /* ── Reel list HTML ── */
   function buildReelList(reels) {
     if (!reels.length) {
@@ -61,18 +95,21 @@
       const scriptBtn = hasScript
         ? `<button class="reel-script-btn" data-reel="${i}" aria-expanded="false" type="button" aria-label="View script">
              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+             <span class="reel-btn-label">Script</span>
            </button>`
         : `<span class="reel-no-script" aria-hidden="true"></span>`;
 
       const watchBtn = reel.driveLink
         ? `<a href="${esc(reel.driveLink)}" target="_blank" rel="noopener noreferrer" class="reel-watch-btn" aria-label="Watch video">
              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+             <span class="reel-btn-label">Watch</span>
            </a>`
         : `<span class="reel-no-script" aria-hidden="true"></span>`;
 
-      const fbBtnCls  = submitted ? `reel-feedback-btn ${approved ? 'rfb-approved' : 'rfb-rejected'}` : 'reel-feedback-btn';
-      const fbBtnIcon = submitted ? (approved ? checkIcon : xIcon) : msgIcon;
-      const feedbackBtn = `<button class="${fbBtnCls}" data-reel-fb="${i}" aria-expanded="false" type="button" aria-label="${submitted ? 'View feedback' : 'Leave feedback'}">${fbBtnIcon}</button>`;
+      const fbBtnCls   = submitted ? `reel-feedback-btn ${approved ? 'rfb-approved' : 'rfb-rejected'}` : 'reel-feedback-btn';
+      const fbBtnIcon  = submitted ? (approved ? checkIcon : xIcon) : msgIcon;
+      const fbBtnLabel = submitted ? (approved ? 'Approved' : 'Rejected') : 'Feedback';
+      const feedbackBtn = `<button class="${fbBtnCls}" data-reel-fb="${i}" aria-expanded="false" type="button" aria-label="${submitted ? 'View feedback' : 'Leave feedback'}">${fbBtnIcon}<span class="reel-btn-label">${fbBtnLabel}</span></button>`;
 
       let feedbackPanel;
       if (submitted) {
@@ -226,7 +263,7 @@
       if (fbBtn) {
         fbBtn.className = `reel-feedback-btn ${approved ? 'rfb-approved' : 'rfb-rejected'}`;
         fbBtn.setAttribute('aria-label', 'View feedback');
-        fbBtn.innerHTML = statusIcon;
+        fbBtn.innerHTML = `${statusIcon}<span class="reel-btn-label">${statusLabel}</span>`;
       }
 
       if (panel) {
@@ -312,6 +349,7 @@
 
       const data = await delRes.json();
       months = data.months || [];
+      setClientContext(data.strategy, data.plan);
 
       if (!months.length) {
         content.innerHTML = `<div class="portal-state"><p class="portal-state-msg">No content found for your account.</p></div>`;

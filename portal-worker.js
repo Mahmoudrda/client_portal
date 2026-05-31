@@ -5,6 +5,36 @@ const JSON_HEADERS = { "Content-Type": "application/json" };
 const CF_TEAM_DOMAIN = "thereelrecipe.cloudflareaccess.com";
 const CF_AUD = "524efff41b966b23e68c87cfbfdb998d406b40859f214b085e0a24db9f85eb10";
 
+const REEL_FIELD_NAMES = [
+  "Card Name",
+  "Posting Date",
+  "Master Stage",
+  "Month",
+  "Script",
+  "Backup Link AM",
+  "Client Comment",
+  "Client Feedback Status",
+  "Strategy (from Briefs) (from Client)",
+  "Plan (from Briefs) (from Client)"
+];
+
+function extractStrategyPlan(reels) {
+  let strategy = null, plan = null;
+  for (const r of reels) {
+    if (!strategy) {
+      const s = r.fields?.["Strategy (from Briefs) (from Client)"];
+      if (Array.isArray(s) && s.length) strategy = s[0];
+    }
+    if (!plan) {
+      const p = r.fields?.["Plan (from Briefs) (from Client)"];
+      if (Array.isArray(p) && p.length) plan = p[0];
+    }
+    if (strategy && plan) break;
+  }
+  return { strategy, plan };
+}
+__name(extractStrategyPlan, "extractStrategyPlan");
+
 /* ── JWT verification ── */
 
 function b64url(str) {
@@ -175,16 +205,7 @@ async function handleGetDeliverables(request, env) {
       ")"
     ].join("");
 
-    const fieldParams = [
-      "fields[]=Card Name",
-      "fields[]=Posting Date",
-      "fields[]=Master Stage",
-      "fields[]=Month",
-      "fields[]=Script",
-      "fields[]=Backup Link AM",
-      "fields[]=Client Comment",
-      "fields[]=Client Feedback Status"
-    ].join("&");
+    const fieldParams = REEL_FIELD_NAMES.map(f => `fields[]=${enc(f)}`).join("&");
 
     const reelParams = `?filterByFormula=${enc(formula)}&${fieldParams}&sort[0][field]=Posting Date&sort[0][direction]=asc`;
 
@@ -225,7 +246,9 @@ async function handleGetDeliverables(request, env) {
       .sort((a, b) => a[1].order - b[1].order)
       .map(([id, m]) => ({ key: id, label: m.label, reels: m.reels }));
 
-    return jsonOk({ months });
+    const { strategy, plan } = extractStrategyPlan(reels);
+
+    return jsonOk({ months, strategy, plan });
   } catch {
     return jsonError("Internal error", 500);
   }
@@ -347,16 +370,7 @@ async function handleAdminDeliverables(request, env) {
     if (year !== null) conditions.push(`YEAR({Posting Date})=${year}`);
     const formula = `AND(${conditions.join(",")})`;
 
-    const fieldParams = [
-      "fields[]=Card Name",
-      "fields[]=Posting Date",
-      "fields[]=Master Stage",
-      "fields[]=Month",
-      "fields[]=Script",
-      "fields[]=Backup Link AM",
-      "fields[]=Client Comment",
-      "fields[]=Client Feedback Status"
-    ].join("&");
+    const fieldParams = REEL_FIELD_NAMES.map(f => `fields[]=${enc(f)}`).join("&");
 
     const reelParams = `?filterByFormula=${enc(formula)}&${fieldParams}&sort[0][field]=Posting Date&sort[0][direction]=asc`;
 
@@ -397,7 +411,9 @@ async function handleAdminDeliverables(request, env) {
       .sort((a, b) => a[1].order - b[1].order)
       .map(([id, m]) => ({ key: id, label: m.label, reels: m.reels }));
 
-    return jsonOk({ months });
+    const { strategy, plan } = extractStrategyPlan(reels);
+
+    return jsonOk({ months, strategy, plan });
   } catch {
     return jsonError("Internal error", 500);
   }

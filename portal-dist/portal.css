@@ -1331,3 +1331,125 @@
     padding: 0;
   }
 }
+
+/* ============================================================
+   Client context (Strategy & Plan) — collapsible cards above tabs
+============================================================ */
+.client-context {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px 24px;
+}
+.cc-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cc-btn {
+  flex: 1 1 280px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.cc-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+.cc-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.cc-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.cc-eyebrow {
+  font-family: 'Figtree', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.cc-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-right: auto;
+}
+.cc-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-3);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.cc-btn[aria-expanded="true"] .cc-chevron {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+.cc-panel {
+  margin-top: 12px;
+  padding: 18px 20px;
+  background: oklch(5.5% 0.045 278);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-2);
+}
+.cc-panel[hidden] { display: none; }
+
+@media (max-width: 768px) {
+  .client-context { padding: 0 16px 16px; }
+  .cc-btn { padding: 12px 14px; }
+  .cc-title { font-size: 18px; }
+}
+
+/* ============================================================
+   Reel row button labels — override fixed-width icon buttons
+============================================================ */
+.reel-watch-btn,
+.reel-script-btn,
+.reel-feedback-btn {
+  width: auto;
+  min-width: 26px;
+  height: 26px;
+  gap: 6px;
+  padding: 0 10px;
+}
+.reel-btn-label {
+  font-family: 'Figtree', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.reel-feedback-btn-pending {
+  color: var(--text-3);
+  border-color: var(--border);
+  background: transparent;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .reel-btn-label { display: none; }
+  .reel-watch-btn,
+  .reel-script-btn,
+  .reel-feedback-btn {
+    width: 26px;
+    padding: 0;
+  }
+}
