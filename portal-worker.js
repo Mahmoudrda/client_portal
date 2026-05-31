@@ -323,9 +323,9 @@ async function handleAdminClients(request, env) {
     const fieldsParam = ["Clients ", "Client Email", "Client Status"]
       .map(f => `fields[]=${enc(f)}`)
       .join("&");
-    const data = await airtableGet(env, "Clients", `?${fieldsParam}&sort[0][field]=${enc("Clients ")}`);
+    const allRecords = await airtableGetAll(env, "Clients", `?${fieldsParam}&sort[0][field]=${enc("Clients ")}`);
 
-    const clients = (data.records ?? [])
+    const clients = allRecords
       .filter(r => allowedClientIds === null || allowedClientIds.has(r.id))
       .map(r => ({
         id:     r.id,
