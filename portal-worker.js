@@ -249,11 +249,25 @@ async function handleAdminClients(request, env) {
   if (!admin) return jsonError("Forbidden", 403);
 
   try {
+    // Find every reel this AM owns, collect distinct linked Client IDs.
+    const amFormula = `FIND(LOWER("${escAirtable(admin)}"),LOWER(ARRAYJOIN({Email (from AM Email)},",")))`;
+    const reels = await airtableGetAll(env, "Reels", `?filterByFormula=${enc(amFormula)}&fields[]=Client`);
+
+    const clientIds = new Set();
+    for (const r of reels) {
+      const linked = r.fields["Client"] ?? [];
+      for (const id of linked) clientIds.add(id);
+    }
+
+    if (clientIds.size === 0) return jsonOk({ clients: [] });
+
     const fieldsParam = ["Clients ", "Client Email", "Client Status"]
       .map(f => `fields[]=${enc(f)}`)
       .join("&");
     const data = await airtableGet(env, "Clients", `?${fieldsParam}&sort[0][field]=${enc("Clients ")}`);
+
     const clients = (data.records ?? [])
+      .filter(r => clientIds.has(r.id))
       .map(r => ({
         id:     r.id,
         name:   r.fields["Clients "] ?? null,
@@ -261,6 +275,7 @@ async function handleAdminClients(request, env) {
         status: r.fields["Client Status"]?.name ?? null
       }))
       .filter(c => c.email);
+
     return jsonOk({ clients });
   } catch {
     return jsonError("Internal error", 500);
@@ -288,7 +303,8 @@ async function handleAdminDeliverables(request, env) {
 
   try {
     const conditions = [
-      `FIND(LOWER("${escAirtable(targetEmail)}"),LOWER(ARRAYJOIN({Client Email (from Client)},",")))`
+      `FIND(LOWER("${escAirtable(targetEmail)}"),LOWER(ARRAYJOIN({Client Email (from Client)},",")))`,
+      `FIND(LOWER("${escAirtable(admin)}"),LOWER(ARRAYJOIN({Email (from AM Email)},",")))`
     ];
     if (year !== null) conditions.push(`YEAR({Posting Date})=${year}`);
     const formula = `AND(${conditions.join(",")})`;

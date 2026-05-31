@@ -245,8 +245,8 @@
       clients = data.clients || [];
 
       if (!clients.length) {
-        clientSelect.innerHTML = '<option value="">No clients found</option>';
-        showMessage('No clients found.');
+        clientSelect.innerHTML = '<option value="">No clients assigned to you</option>';
+        showMessage('No clients are currently assigned to you as Account Manager.');
         return;
       }
 
@@ -300,7 +300,8 @@
       months = data.months || [];
 
       if (!months.length) {
-        showMessage(year ? `No reels found for ${esc(client?.name || email)} in ${year}.` : `No reels found for ${esc(client?.name || email)}.`);
+        const who = client?.name || email;
+        showMessage(year ? `No reels assigned to you for ${esc(who)} in ${year}.` : `No reels assigned to you for ${esc(who)}.`);
         return;
       }
 
