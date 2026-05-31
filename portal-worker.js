@@ -67,6 +67,18 @@ async function getAuthEmail(request, env) {
 }
 __name(getAuthEmail, "getAuthEmail");
 
+async function requireAdmin(request, env) {
+  const email = await getAuthEmail(request, env);
+  if (!email) return null;
+  const list = (env.ADMIN_EMAILS ?? "")
+    .toLowerCase()
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
+  return list.includes(email.toLowerCase()) ? email : null;
+}
+__name(requireAdmin, "requireAdmin");
+
 /* ── Router ── */
 
 var src_default = {
@@ -82,6 +94,12 @@ var src_default = {
     const decisionMatch = url.pathname.match(/^\/api\/deliverables\/([^/]+)\/decision$/);
     if (decisionMatch && request.method === "POST") {
       return handleDecision(request, env, decisionMatch[1]);
+    }
+    if (url.pathname === "/api/admin/clients" && request.method === "GET") {
+      return handleAdminClients(request, env);
+    }
+    if (url.pathname === "/api/admin/deliverables" && request.method === "GET") {
+      return handleAdminDeliverables(request, env);
     }
     if (url.pathname.startsWith("/api/")) {
       return jsonError("Not found", 404);
@@ -222,6 +240,115 @@ async function handleDecision(request, env, recordId) {
   }
 }
 __name(handleDecision, "handleDecision");
+
+/* ── Admin handlers ── */
+
+async function handleAdminClients(request, env) {
+  let admin;
+  try { admin = await requireAdmin(request, env); } catch { return jsonError("Unauthorized", 401); }
+  if (!admin) return jsonError("Forbidden", 403);
+
+  try {
+    const fieldsParam = ["Clients ", "Client Email", "Client Status"]
+      .map(f => `fields[]=${enc(f)}`)
+      .join("&");
+    const data = await airtableGet(env, "Clients", `?${fieldsParam}&sort[0][field]=${enc("Clients ")}`);
+    const clients = (data.records ?? [])
+      .map(r => ({
+        id:     r.id,
+        name:   r.fields["Clients "] ?? null,
+        email:  r.fields["Client Email"] ?? null,
+        status: r.fields["Client Status"]?.name ?? null
+      }))
+      .filter(c => c.email);
+    return jsonOk({ clients });
+  } catch {
+    return jsonError("Internal error", 500);
+  }
+}
+__name(handleAdminClients, "handleAdminClients");
+
+async function handleAdminDeliverables(request, env) {
+  let admin;
+  try { admin = await requireAdmin(request, env); } catch { return jsonError("Unauthorized", 401); }
+  if (!admin) return jsonError("Forbidden", 403);
+
+  const url = new URL(request.url);
+  const targetEmail = url.searchParams.get("email");
+  const yearParam   = url.searchParams.get("year");
+  if (!targetEmail) return jsonError("Missing email parameter", 400);
+
+  let year = null;
+  if (yearParam) {
+    year = parseInt(yearParam, 10);
+    if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+      return jsonError("Invalid year parameter", 400);
+    }
+  }
+
+  try {
+    const conditions = [
+      `FIND(LOWER("${escAirtable(targetEmail)}"),LOWER(ARRAYJOIN({Client Email (from Client)},",")))`
+    ];
+    if (year !== null) conditions.push(`YEAR({Posting Date})=${year}`);
+    const formula = `AND(${conditions.join(",")})`;
+
+    const fieldParams = [
+      "fields[]=Card Name",
+      "fields[]=Posting Date",
+      "fields[]=Master Stage",
+      "fields[]=Month",
+      "fields[]=Script",
+      "fields[]=Backup Link AM",
+      "fields[]=Client Comment",
+      "fields[]=Client Feedback Status"
+    ].join("&");
+
+    const reelParams = `?filterByFormula=${enc(formula)}&${fieldParams}&sort[0][field]=Posting Date&sort[0][direction]=asc`;
+
+    const [reels, monthsData] = await Promise.all([
+      airtableGetAll(env, "Reels", reelParams),
+      airtableGet(env, "Months", "?fields[]=Month Name&fields[]=Order&sort[0][field]=Order&sort[0][direction]=asc")
+    ]);
+
+    const monthMap = {};
+    for (const r of monthsData.records ?? []) {
+      monthMap[r.id] = {
+        label: r.fields["Month Name"] ?? r.id,
+        order: r.fields["Order"] ?? 999
+      };
+    }
+
+    const grouped = new Map();
+    for (const r of reels) {
+      const monthIds  = r.fields["Month"] ?? [];
+      const monthId   = monthIds[0] ?? "unknown";
+      const monthInfo = monthMap[monthId] ?? { label: "Other", order: 999 };
+      if (!grouped.has(monthId)) {
+        grouped.set(monthId, { label: monthInfo.label, order: monthInfo.order, reels: [] });
+      }
+      grouped.get(monthId).reels.push({
+        id:                   r.id,
+        title:                r.fields["Card Name"] ?? "",
+        date:                 r.fields["Posting Date"] ?? null,
+        stage:                r.fields["Master Stage"] ?? "",
+        script:               r.fields["Script"] ?? "",
+        driveLink:            r.fields["Backup Link AM"] ?? null,
+        clientComment:        r.fields["Client Comment"] ?? null,
+        clientFeedbackStatus: r.fields["Client Feedback Status"] ?? null
+      });
+    }
+
+    const months = [...grouped.entries()]
+      .sort((a, b) => a[1].order - b[1].order)
+      .map(([id, m]) => ({ key: id, label: m.label, reels: m.reels }));
+
+    return jsonOk({ months });
+  } catch {
+    return jsonError("Internal error", 500);
+  }
+}
+__name(handleAdminDeliverables, "handleAdminDeliverables");
 
 /* ── Airtable helpers ── */
 

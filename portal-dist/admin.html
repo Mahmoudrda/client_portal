@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Console — The Reel Recipe</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#090b1a">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Figtree:wght@300;400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Figtree:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
+
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="portal.css">
+
+  <style>
+    .admin-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .admin-controls label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-family: 'Figtree', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim, #8c93b8);
+    }
+    .admin-controls select {
+      font-family: 'Figtree', sans-serif;
+      font-size: 14px;
+      padding: 8px 12px;
+      min-width: 220px;
+      background: var(--surface-2, #14172a);
+      color: var(--text, #f0f2ff);
+      border: 1px solid var(--border, #232744);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .admin-controls select:focus {
+      outline: none;
+      border-color: var(--accent, #34d8c1);
+    }
+    .admin-controls select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .pnav-client-eyebrow.admin-eyebrow { color: var(--accent, #34d8c1); }
+  </style>
+</head>
+<body class="portal-body">
+
+  <!-- ===== ADMIN NAV ===== -->
+  <div class="pnav-wrap">
+    <nav class="pnav">
+      <div class="pnav-content">
+        <a href="index.html" class="pnav-logo" aria-label="The Reel Recipe home">
+          <picture>
+            <source srcset="./logo-icon.avif" type="image/avif">
+            <img src="./logo-icon.png" alt="" class="pnav-logo-icon">
+          </picture>
+          <picture>
+            <source srcset="./logo-wordmark.avif" type="image/avif">
+            <img src="./logo-wordmark.png" alt="The Reel Recipe" class="pnav-logo-wm">
+          </picture>
+        </a>
+
+        <div class="pnav-client-badge">
+          <span class="pnav-client-eyebrow admin-eyebrow">Admin Console</span>
+          <span class="pnav-client-name" data-admin-current-name>Select a client</span>
+        </div>
+
+        <button class="pnav-signout" type="button" aria-label="Sign out">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span class="pnav-signout-label">Sign out</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <main id="main-content">
+
+    <!-- ===== ADMIN HEADER ===== -->
+    <header class="portal-header">
+      <div class="ph-inner">
+        <div class="ph-left">
+          <div class="ph-eyebrow">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            Admin Console
+          </div>
+          <h1 class="ph-title">
+            <span class="ph-title-sm">Content Hub</span>
+            <span data-admin-current-name>—</span>
+          </h1>
+          <p class="ph-sub">Read-only view of any client's reels, scripts, and content plan.</p>
+
+          <div class="admin-controls" style="margin-top: 20px;">
+            <label>
+              Client
+              <select id="adminClientSelect" disabled>
+                <option value="">Loading clients…</option>
+              </select>
+            </label>
+            <label>
+              Year
+              <select id="adminYearSelect">
+                <option value="">All years</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="ph-summary" id="phSummary">
+          <div class="phs-item phs-approved">
+            <span class="phs-num" id="statPublished">0</span>
+            <span class="phs-label">Published</span>
+          </div>
+          <div class="phs-divider" aria-hidden="true"></div>
+          <div class="phs-item phs-pending">
+            <span class="phs-num" id="statProgress">0</span>
+            <span class="phs-label">In Progress</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== MONTH TABS ===== -->
+    <div class="portal-tabs-outer" id="portalTabsOuter">
+      <div class="portal-tabs-inner">
+        <div class="portal-tabs" role="tablist" aria-label="Select month"></div>
+      </div>
+    </div>
+
+    <!-- ===== DYNAMIC CONTENT ===== -->
+    <div class="portal-feed-wrap">
+      <div id="portalContent" aria-live="polite">
+        <div class="portal-state">
+          <p class="portal-state-msg">Select a client to view their content.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="portal-footer">
+    <div class="pf-inner">
+      <div class="pf-brand">
+        <picture>
+          <source srcset="./logo-icon.avif" type="image/avif">
+          <img src="./logo-icon.png" alt="" class="pf-logo">
+        </picture>
+        <span class="pf-tag">Admin Console · The Reel Recipe</span>
+      </div>
+      <p class="pf-copy">Internal use only. Do not share.</p>
+    </div>
+  </footer>
+
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -4,3 +4,7 @@ compatibility_date = "2025-05-01"
 
 [assets]
 directory = "./portal-dist"
+
+[vars]
+ADMIN_EMAILS = "innovation@thereelrecipe.com"
+DEV_EMAIL = "innovation@thereelrecipe.com"
