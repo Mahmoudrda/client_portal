@@ -6,6 +6,6 @@ compatibility_date = "2025-05-01"
 directory = "./portal-dist"
 
 [vars]
-ADMIN_EMAILS = "innovation@thereelrecipe.com"
+ADMIN_EMAILS = "innovation@thereelrecipe.com,mira.samirr1@gmail.com,aliaasayed373@gmail.com,kenzy8856@gmail.com,habibamohamed0611@gmail.com"
 SUPER_ADMIN_EMAILS = "innovation@thereelrecipe.com"
 DEV_EMAIL = "innovation@thereelrecipe.com"
