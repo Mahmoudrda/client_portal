@@ -115,6 +115,26 @@ var src_default = {
     if (url.pathname.startsWith("/api/")) {
       return jsonError("Not found", 404);
     }
+
+    // Admins hitting the root get the admin console; everyone else gets the client portal.
+    if (url.pathname === "/") {
+      try {
+        const email = await getAuthEmail(request, env);
+        const admins = (env.ADMIN_EMAILS ?? "")
+          .toLowerCase()
+          .split(",")
+          .map(s => s.trim())
+          .filter(Boolean);
+        if (email && admins.includes(email.toLowerCase())) {
+          const adminUrl = new URL(request.url);
+          adminUrl.pathname = "/admin.html";
+          return env.ASSETS.fetch(new Request(adminUrl, request));
+        }
+      } catch {
+        // JWT problems fall through to normal asset serving.
+      }
+    }
+
     return env.ASSETS.fetch(request);
   }
 };
